@@ -58,7 +58,7 @@ class FactorizeVisitor(gql.language.Visitor):
 
         for elem in node.selections:
             if isinstance(elem, gql.language.FieldNode):
-                # Idenitfy the fields by (name. alias) tuple
+                # Identify the fields by (name. alias) tuple
                 name_alias = (elem.name.value, getattr(elem.alias, "value", None))
 
                 if name_alias in selections_dict.keys():
@@ -140,17 +140,20 @@ class SortVisitor(gql.language.Visitor):
 
 
 class PruneArgumentsVisitor(gql.language.Visitor):
-    """
-    Keep only the first instance of the same argument type in FieldNodes.
+    """Keep only the first instance of the same argument type in FieldNodes.
 
-    Example:
+    Example::
+
         {
             things(arg1: 42, arg2: 5150, arg1: 314) {...}
         }
-        # Becomes:
+
+    Becomes::
+
         {
             things(arg1: 42, arg2: 5150) {...}
         }
+
     """
 
     # pylint: disable=no-self-use

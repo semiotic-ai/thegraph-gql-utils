@@ -33,39 +33,162 @@ from .visitors import (
 
 
 def factorize(query: gql.DocumentNode) -> gql.DocumentNode:
-    """
-    Merges identical adjacent selections.
+    """Merges same-level identical selections.
+
+    For each level, the merging of the selections will merge both arguments and
+    sub-selections recursively. For example:
+
+    .. code-block:: graphql
+
+        {
+            pairs(orderDirection: asc, first: 10) {
+                id
+                name
+                reserve0
+                liquidityPositions(first: 10) {
+                    id
+                }
+            }
+            pairs(orderDirection: desc, first: 5, skip: 2) {
+                id
+                name
+                timestamp
+                liquidityPositions(skip: 1) {
+                    block
+                }
+            }
+        }
+
+    Becomes:
+
+    .. code-block:: graphql
+
+        {
+            pairs(orderDirection: asc, first: 10, orderDirection: desc, first: 5, skip: 2) {
+                id
+                name
+                reserve0
+                liquidityPositions(first: 10, skip: 1) {
+                    id
+                    block
+                }
+                timestamp
+            }
+        }
+
+    Args:
+        query (gql.DocumentNode): input query AST
+
+    Returns:
+        gql.DocumentNode: output query AST
     """
 
     return gql.language.visit(query, FactorizeVisitor())
 
 
 def sort(query: gql.DocumentNode) -> gql.DocumentNode:
-    """
-    Lexicographic sort of adjacent selections and arguments.
+    """Lexicographic sort of adjacent arguments and selections.
+
+    For example:
+
+    .. code-block:: graphql
+
+        {
+            pairs(orderDirection: asc, first: 10) {
+                reserve0
+                id
+                name
+            }
+        }
+
+    Becomes:
+
+    .. code-block:: graphql
+
+        {
+            pairs(first: 10, orderDirection: asc) {
+                id
+                name
+                reserve0
+            }
+        }
+
+    Args:
+        query (gql.DocumentNode): input query AST
+
+    Returns:
+        gql.DocumentNode: output query AST
     """
 
     return gql.language.visit(query, SortVisitor())
 
 
 def prune_query_arguments(query: gql.DocumentNode) -> gql.DocumentNode:
-    """
-    Keep only the first instance of the same argument type in FieldNodes.
+    """Keep only the first instance of the same argument type in FieldNodes.
 
-    Example:
+    For example:
+
+    .. code-block:: graphql
+
         {
-            things(arg1: 42, arg2: 5150, arg1: 314) {...}
+            things(arg1: 42, arg2: 5150, arg1: 314) {}
         }
-        # Becomes:
+
+    Becomes:
+
+    .. code-block:: graphql
+
         {
-            things(arg1: 42, arg2: 5150) {...}
+            things(arg1: 42, arg2: 5150) {}
         }
+
+    Args:
+        query (gql.DocumentNode): input query AST
+
+    Returns:
+        gql.DocumentNode: output query AST
     """
 
     return gql.language.visit(query, PruneArgumentsVisitor())
 
 
 def substitute_fragments(query: gql.DocumentNode) -> gql.DocumentNode:
+    """Substitutes the fragment spread nodes with their definition.
+
+    Will also remove the fragment definitions.
+    For example:
+
+    .. code-block:: graphql
+
+        {
+            pairs() {
+                id
+                ...f1
+            }
+        }
+        fragment f1 on Pair {
+            name
+            reserve0
+        }
+
+    Becomes:
+
+    .. code-block:: graphql
+
+        {
+            pairs() {
+                id
+                name
+                reserve0
+            }
+        }
+
+    Args:
+        query (gql.DocumentNode): input query AST
+
+    Returns:
+        gql.DocumentNode: output query AST
+    """
     extract_fragments_visitor = RemoveFragmentsVisitor()
 
     # Extract and remove the fragments
@@ -81,6 +204,15 @@ def substitute_fragments(query: gql.DocumentNode) -> gql.DocumentNode:
 def remove_unknown_arguments(
     query: gql.DocumentNode, schema: gql.GraphQLSchema
 ) -> gql.DocumentNode:
+    """Removes arguments unknown by the schema.
+
+    Args:
+        query (gql.DocumentNode): input query AST
+        schema (gql.GraphQLSchema): input schema AST
+
+    Returns:
+        gql.DocumentNode: output query AST
+    """
     errors = gql.validate(schema, query, rules=[gql.validation.KnownArgumentNamesRule])
     return gql.visit(query, RemoveUnknownArgumentsVisitor(errors))
 
@@ -90,6 +222,58 @@ def remove_values(
     ignored_arguments: Optional[Container[str]] = None,
     existing_variables: Optional[Union[str, bytes, Mapping[str, Any]]] = None,
 ) -> Tuple[gql.DocumentNode, List[str]]:
+    """Extracts all values, replaces them with variables.
+
+    The new variables will be named `$_0` ... `$_n`, and an ordered list of the
+    corresponding values will be returned in addition to the altered query AST.
+
+    Already existing variables can be supplied. These will be renamed using the same
+    convention as the other values, and the values will be included in the  returned
+    list of variables.
+
+    Example:
+
+    .. code-block:: graphql
+
+        {
+            pairs(orderDirection: $orderDirection, first: 10, skip: 3) {
+                id
+            }
+        }
+
+    with
+
+    .. code-block:: python
+
+        existing_variables = {"$orderDirection": "asc"}
+        ignored_arguments = ["skip"]
+
+    Yields:
+
+    .. code-block:: graphql
+
+        {
+            pairs(orderDirection: $_0, first: $_1, skip: 3) {
+                id
+            }
+        }
+
+    and
+
+    .. code-block:: python
+
+        ["asc", "10"]
+
+    Args:
+        query (gql.DocumentNode): input query AST
+        ignored_arguments (Optional[Container[str]], optional): List of argument names
+            whose values to ignore. Defaults to None.
+        existing_variables (Optional[Union[str, bytes, Mapping[str, Any]]], optional):
+            Existing query arguments. Defaults to None.
+
+    Returns:
+        Tuple[gql.DocumentNode, List[str]]: output query AST
+    """
     visitor = RemoveValuesVisitor(
         ignored_arguments=ignored_arguments, existing_variables=existing_variables
     )
@@ -101,11 +285,65 @@ def remove_values(
 def extract_root_queries(
     query: gql.DocumentNode, remove_aliases: bool = True
 ) -> Iterable[gql.language.ast.DocumentNode]:
+    """Split query top level selections.
+
+    Example:
+
+    .. code-block:: graphql
+
+        {
+            pairs {
+                id
+            }
+            mints {
+                id
+                pair {
+                    name
+                }
+            }
+        }
+
+    Is split into:
+
+    .. code-block:: graphql
+
+        {
+            pairs {
+                id
+            }
+        }
+
+    and
+
+    .. code-block:: graphql
+
+        {
+            mints {
+                id
+                pair {
+                    name
+                }
+            }
+        }
+
+    Args:
+        query (gql.DocumentNode): input query AST
+        remove_aliases (bool, optional): Remove alias names. Defaults to True.
+
+    Raises:
+        RuntimeError: Document contains more than one query node.
+        RuntimeError: Unexpected type(selection) != FieldNode.
+
+    Returns:
+        Iterable[gql.language.ast.DocumentNode]: Iterable of output query AST's
+
+    Yields:
+        Iterator[Iterable[gql.language.ast.DocumentNode]]:
     """
-    No need for a visitor here, since we look only at the document's top level.
-    By default, remove root field aliases, as once isolated they do not serve any
-    purpose.
-    """
+
+    # No need for a visitor here, since we look only at the document's top level.
+    # By default, remove root field aliases, as once isolated they do not serve any
+    # purpose.
 
     query_operations_count = 0
 
@@ -154,18 +392,93 @@ def extract_root_queries(
 
 
 def remove_aliases(query: gql.DocumentNode) -> gql.DocumentNode:
+    """Remove all alias names.
+
+    Args:
+        query (gql.DocumentNode): input query AST
+
+    Returns:
+        gql.DocumentNode: output query AST
+    """
     return gql.language.visit(query, RemoveAliasesVisitor())
 
 
 def insert_variables(
     query: gql.DocumentNode, variables: Union[str, bytes, Mapping[str, Any]]
 ) -> gql.DocumentNode:
+    """Inserts provided variable values in place of variables in the query.
+
+    Note that it will not do type inference for now, so it might cause type issues in
+    the resulting query.
+
+    For example:
+
+    .. code-block:: graphql
+
+        {
+            pairs(orderDirection: $_0, first: $_1, skip: 3) {
+                id
+            }
+        }
+
+    with:
+
+    .. code-block: python
+
+        {"_0": "asc", "_1": 24}
+
+    Gives:
+
+    .. code-block:: graphql
+
+        {
+            pairs(orderDirection: "asc", first: 24, skip: 3) {
+                id
+            }
+        }
+
+    Args:
+        query (gql.DocumentNode): input query AST
+        variables (Union[str, bytes, Mapping[str, Any]]): Variables mapping
+
+    Returns:
+        gql.DocumentNode: output query AST
+    """
     return gql.language.visit(query, InsertVariables(variables))
 
 
 def build_variable_definitions(
     query: gql.DocumentNode, schema: gql.GraphQLSchema
 ) -> gql.DocumentNode:
+    """Builds the query variable definitions by inferring types based on schema.
+
+    Example:
+
+    .. code-block:: graphql
+
+        {
+            pairs(orderDirection: $orderDirection, first: 10, skip: 3) {
+                id
+            }
+        }
+
+    Gives (with supplying the appropriate schema):
+
+    .. code-block:: graphql
+
+        query ($orderDirection: OrderDirection) {
+            pairs(orderDirection: $orderDirection, first: 10, skip: 3) {
+                id
+            }
+        }
+
+    Args:
+        query (gql.DocumentNode): input query AST
+        schema (gql.GraphQLSchema): schema AST
+
+    Returns:
+        gql.DocumentNode: output query AST
+    """
     type_info = gql.utilities.TypeInfo(schema)
 
     return gql.language.visit(
@@ -177,4 +490,32 @@ def build_variable_definitions(
 
 
 def remove_query_name(query: gql.DocumentNode) -> gql.DocumentNode:
+    """Removes the query name.
+
+    Example:
+
+    .. code-block:: graphql
+
+        query MyQuery {
+            pairs {
+                id
+            }
+        }
+
+    Becomes:
+
+    .. code-block:: graphql
+
+        {
+            pairs {
+                id
+            }
+        }
+
+    Args:
+        query (gql.DocumentNode): input query AST
+
+    Returns:
+        gql.DocumentNode: output query AST
+    """
     return gql.language.visit(query, RemoveQueryName())

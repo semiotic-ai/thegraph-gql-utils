@@ -36,6 +36,11 @@ python = "^3.8"
 graphql-core = "~3.2"
 more-itertools = "~8.12"
 
+[tool.poetry.group.docs.dependencies]
+Sphinx = "^4.5.0"
+pygments-graphql = "^1.0.0"
+sphinx-rtd-theme = "^1.0.0"
+
 [tool.poetry.dev-dependencies]
 black = "^22"
 isort = "~5.10"

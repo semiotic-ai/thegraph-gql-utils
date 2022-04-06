@@ -18,17 +18,16 @@ import graphql as gql
 
 
 def ast2str(document: gql.language.ast.Node) -> str:
-    """
-    Print a graphql-core AST document with escape sequences removed.
-    """
+    """Print a graphql-core AST document with escape sequences removed."""
 
     return bytes(gql.print_ast(document), "utf-8").decode("unicode_escape")
 
 
 def node2dict(node: gql.language.ast.Node) -> Dict[str, Any]:
-    """
-    Extract a node key-value pairs into a dictionnary. Better than
-    gql.language.ast.Node.to_dict() in that it does not recurse down the values.
+    """Extract an AST node's key-value pairs into a dictionnary.
+
+    Better than gql.language.ast.Node.to_dict() in that it does not recurse down the
+    values.
     """
 
     return {k: getattr(node, k) for k in node.keys}

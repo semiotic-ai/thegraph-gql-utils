@@ -28,7 +28,7 @@ classifiers = [
 ]
 repository = "https://gitlab.com/semiotic-ai/thegraph-gql-utils"
 packages = [
-    { include = "gql_utils", from = "src" },
+    { include = "thegraph_gql_utils", from = "src" },
 ]
 
 [tool.poetry.dependencies]

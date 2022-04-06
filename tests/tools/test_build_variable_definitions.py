@@ -16,8 +16,8 @@
 import graphql as gql
 import pytest
 
-from gql_utils.misc import ast2str
-from gql_utils.tools import build_variable_definitions
+from thegraph_gql_utils.misc import ast2str
+from thegraph_gql_utils.tools import build_variable_definitions
 
 
 @pytest.mark.parametrize(

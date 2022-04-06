@@ -17,8 +17,8 @@ from typing import Any, Mapping, Union
 import graphql as gql
 import pytest
 
-from gql_utils.misc import ast2str
-from gql_utils.tools import insert_variables
+from thegraph_gql_utils.misc import ast2str
+from thegraph_gql_utils.tools import insert_variables
 
 
 @pytest.mark.parametrize(

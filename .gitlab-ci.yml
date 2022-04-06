@@ -87,6 +87,6 @@ publish:
     - pip install twine
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=${CI_REGISTRY_USER} python -m twine upload --repository-url https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/pypi dist/*.whl
   only:
-    - tags@thegraph/gql_utils
+    - tags@semiotic-ai/thegraph-gql-utils
   variables:
       GIT_STRATEGY: none

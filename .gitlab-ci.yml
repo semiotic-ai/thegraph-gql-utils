@@ -39,10 +39,10 @@ pylint:
     - mkdir -p pylint/badges pylint/lint
     - echo undefined > pylint/badges/$CI_JOB_NAME.score
     - pip install pylint_gitlab
-    - pylint ./src/gql_utils ./tests -j0 --exit-zero --output-format=text | tee /tmp/pylint.txt
+    - pylint ./src/thegraph_gql_utils ./tests -j0 --exit-zero --output-format=text | tee /tmp/pylint.txt
     - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' /tmp/pylint.txt > pylint/badges/$CI_JOB_NAME.score
-    - pylint ./src/gql_utils ./tests -j0 --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter > codeclimate.json
-    - pylint ./src/gql_utils ./tests -j0 --exit-zero --output-format=pylint_gitlab.GitlabPagesHtmlReporter > pylint/lint/index.html
+    - pylint ./src/thegraph_gql_utils ./tests -j0 --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter > codeclimate.json
+    - pylint ./src/thegraph_gql_utils ./tests -j0 --exit-zero --output-format=pylint_gitlab.GitlabPagesHtmlReporter > pylint/lint/index.html
   after_script:
     - anybadge --overwrite --label $CI_JOB_NAME --value=$(cat pylint/badges/$CI_JOB_NAME.score) --file=pylint/badges/$CI_JOB_NAME.svg 4=red 6=orange 8=yellow 10=green
     - |

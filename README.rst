@@ -39,7 +39,7 @@ Example
     print(print_ast(new_query))
 
 Output::
-    
+
     {
         pairs(first: 10, orderDirection: asc) {
             id

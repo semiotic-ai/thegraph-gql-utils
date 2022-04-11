@@ -404,7 +404,9 @@ def remove_aliases(query: gql.DocumentNode) -> gql.DocumentNode:
 
 
 def insert_variables(
-    query: gql.DocumentNode, variables: Union[str, bytes, Mapping[str, Any]]
+    query: gql.DocumentNode,
+    schema: gql.GraphQLSchema,
+    variables: Union[str, bytes, Mapping[str, Any]],
 ) -> gql.DocumentNode:
     """Inserts provided variable values in place of variables in the query.
 
@@ -439,12 +441,18 @@ def insert_variables(
 
     Args:
         query (gql.DocumentNode): input query AST
+        schema (gql.GraphQLSchema): input schema AST
         variables (Union[str, bytes, Mapping[str, Any]]): Variables mapping
 
     Returns:
         gql.DocumentNode: output query AST
     """
-    return gql.language.visit(query, InsertVariables(variables))
+    type_info = gql.utilities.TypeInfo(schema)
+
+    return gql.language.visit(
+        query,
+        gql.utilities.TypeInfoVisitor(type_info, InsertVariables(variables, type_info)),
+    )
 
 
 def build_variable_definitions(

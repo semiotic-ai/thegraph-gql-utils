@@ -264,7 +264,10 @@ class RemoveValuesVisitor(gql.language.Visitor):
         if isinstance(node, gql.language.ValueNode) and not isinstance(
             node, gql.language.ObjectValueNode
         ):
-            if self.ignored_arguments is None or parent.name.value not in self.ignored_arguments:
+            if (
+                self.ignored_arguments is None
+                or parent.name.value not in self.ignored_arguments
+            ):
                 if isinstance(node, gql.language.VariableNode):
                     self.removed_arguments += [
                         str(self.existing_variables[node.name.value])

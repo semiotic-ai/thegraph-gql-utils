@@ -27,7 +27,7 @@ from thegraph_gql_utils.tools import remove_values
         (
             """
             {
-                token(something: "sdgsdfg", id: {chimney: 42, diesel: {piano: 54}}) {
+                token(something: "sdgsdfg", some_enum: EnumValue, id: {chimney: 42, diesel: {piano: 54}}) {
                     name
                     id
                 }
@@ -37,13 +37,13 @@ from thegraph_gql_utils.tools import remove_values
             None,
             """
             {
-                token(something: $_0, id: {chimney: $_1, diesel: {piano: 54}}) {
+                token(something: $_0, some_enum: $_1, id: {chimney: $_2, diesel: {piano: 54}}) {
                     name
                     id
                 }
             }
             """,
-            ["sdgsdfg", 42],
+            ["sdgsdfg", "EnumValue", 42],
         ),
         (
             """

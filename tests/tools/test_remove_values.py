@@ -43,7 +43,7 @@ from thegraph_gql_utils.tools import remove_values
                 }
             }
             """,
-            ['"sdgsdfg"', "42"],
+            ["sdgsdfg", 42],
         ),
         (
             """
@@ -64,7 +64,7 @@ from thegraph_gql_utils.tools import remove_values
                 }
             }
             """,
-            ['"sdgsdfg"', "42", "{piano: 54}"],
+            ["sdgsdfg", 42, "{piano: 54}"],
         ),
     ],
 )

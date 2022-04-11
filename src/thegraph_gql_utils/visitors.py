@@ -270,7 +270,9 @@ class RemoveValuesVisitor(gql.language.Visitor):
                         str(self.existing_variables[node.name.value])
                     ]
                 else:
-                    self.removed_arguments += [gql.print_ast(node)]
+                    self.removed_arguments += [
+                        gql.utilities.value_from_ast_untyped(node)
+                    ]
 
                 # Create placeholder variable
                 placeholder_var = gql.language.parse_value(

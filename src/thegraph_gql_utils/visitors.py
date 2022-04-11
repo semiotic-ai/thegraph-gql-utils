@@ -264,7 +264,10 @@ class RemoveValuesVisitor(gql.language.Visitor):
         if isinstance(node, gql.language.ValueNode) and not isinstance(
             node, gql.language.ObjectValueNode
         ):
-            if parent.name.value not in self.ignored_arguments:
+            if (
+                self.ignored_arguments is None
+                or parent.name.value not in self.ignored_arguments
+            ):
                 if isinstance(node, gql.language.VariableNode):
                     self.removed_arguments += [
                         str(self.existing_variables[node.name.value])
@@ -343,17 +346,20 @@ class InsertVariables(gql.language.Visitor):
     Replace variables placeholders with the variable values provided with the query.
     """
 
-    def __init__(self, variables: Union[str, bytes, Mapping[str, Any]]) -> None:
+    def __init__(
+        self,
+        variables: Union[str, bytes, Mapping[str, Any]],
+        type_info: gql.utilities.TypeInfo,
+    ) -> None:
         super().__init__()
+
+        self.type_info = type_info
 
         # JSON str to dict
         if isinstance(variables, (str, bytes)):
             self.variables = json.loads(variables)
         else:
             self.variables = variables
-
-        # Turn the second level of Dict back to JSON
-        self.variables = {k: json.dumps(v) for k, v in self.variables.items()}
 
     def enter_variable(self, node, _key, _parent, _path, ancestors):
         if any(
@@ -363,7 +369,18 @@ class InsertVariables(gql.language.Visitor):
             return gql.language.visitor.IDLE
 
         if node.name.value in self.variables.keys():
-            return gql.language.parse_value(str(self.variables[node.name.value]))
+            variable_type = self.type_info.get_input_type()
+            if isinstance(variable_type, gql.GraphQLInputObjectType) and isinstance(
+                self.variables[node.name.value], str
+            ):
+                # The object is stored as JSON. Deserialize it first.
+                self.variables[node.name.value] = json.loads(
+                    self.variables[node.name.value]
+                )
+
+            return gql.utilities.ast_from_value(
+                self.variables[node.name.value], variable_type
+            )
 
         raise RuntimeError(f"No value provided for variable {node.name.value}")
 

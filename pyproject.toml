@@ -16,7 +16,8 @@
 name = "thegraph-gql-utils"
 version = "0.0.0"  # Filled in by poetry-dynamic-versioning
 authors = [
-    "Alexis Asseman <alexis@semiotic.ai>"
+    "Alexis Asseman <alexis@semiotic.ai>",
+    "Richie Goulazian <richie@semiotic.ai>" 
 ]
 description = "GraphQL language utilities for The Graph"
 license = "Apache 2.0"

@@ -36,7 +36,6 @@ pylint:
     - poetry install  -n --with=dev
     - mkdir -p pylint/badges pylint/lint
     - echo undefined > pylint/badges/$CI_JOB_NAME.score
-    - pip install pylint_gitlab
     - poetry run pylint ./src/thegraph_gql_utils ./tests -j0 --exit-zero --output-format=text | tee /tmp/pylint.txt
     - sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' /tmp/pylint.txt > pylint/badges/$CI_JOB_NAME.score
     - poetry run pylint ./src/thegraph_gql_utils ./tests -j0 --exit-zero --output-format=pylint_gitlab.GitlabCodeClimateReporter > codeclimate.json

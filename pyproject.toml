@@ -53,7 +53,7 @@ enable = true
 vcs = "git"
 
 [build-system]
-requires = ["poetry_core>=1.2.0a2", "poetry-dynamic-versioning==1.0.0b1"]
+requires = ["poetry_core>=1.2.0b2"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.isort]

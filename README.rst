@@ -12,7 +12,7 @@ Building
 --------
 
 The project is managed by `Poetry`_. You will need to install
-Poetry version v1.2.0b1 or above.
+Poetry version v1.2.0b2 or above.
 
 .. _Poetry: https://python-poetry.org
 

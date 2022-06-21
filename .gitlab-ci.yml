@@ -87,6 +87,6 @@ publish:
     - cat $PYPIRC > /tmp/.pypirc
     - python -m twine upload dist/thegraph_gql_utils-*-py3-none-any.whl --config-file /tmp/.pypirc
   only:
-    - tags@semiotic-ai/thegraph-gql-utils
+    - tags@semiotic-ai/the-graph/thegraph-gql-utils
   variables:
       GIT_STRATEGY: none

@@ -287,6 +287,22 @@ class RemoveValuesVisitor(gql.language.Visitor):
         return gql.language.Visitor.IDLE
 
 
+class RemoveDefaultValuesVisitor(gql.language.Visitor):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.removed_values: Dict[str, Any] = {}
+
+    def enter_variable_definition(self, node, _key, _parent, _path, _ancestors):
+        print("3")
+        if node.default_value:
+            self.removed_values[node.variable.name.value] = node.default_value.value
+
+            node_dict = node2dict(node)
+            del node_dict["default_value"]
+            return gql.language.ast.VariableDefinitionNode(**node_dict)
+
+
 class BuildArgumentDefinitionsVisitor(gql.language.Visitor):
     def __init__(
         self,

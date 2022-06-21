@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from copy import deepcopy
-from typing import Any, Container, Iterable, List, Mapping, Optional, Tuple, Union
+from typing import Any, Container, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 import graphql as gql
 
@@ -23,6 +23,7 @@ from .visitors import (
     InsertVariables,
     PruneArgumentsVisitor,
     RemoveAliasesVisitor,
+    RemoveDefaultValuesVisitor,
     RemoveFragmentsVisitor,
     RemoveQueryName,
     RemoveUnknownArgumentsVisitor,
@@ -280,6 +281,50 @@ def remove_values(
     new_gql_doc = gql.language.visit(query, visitor)
 
     return new_gql_doc, visitor.removed_arguments
+
+
+def remove_default_values(
+    query: gql.DocumentNode,
+) -> Tuple[gql.DocumentNode, Dict[str, Any]]:
+    """Removes and extracts default variables values.
+
+    Example:
+
+    .. code-block:: graphql
+
+        query (first: !Int = 42) {
+            pairs(first: $first) {
+                id
+            }
+        }
+
+    Returns:
+
+    .. code-block:: graphql
+
+        query (first: Int!) {
+            pairs(first: $first) {
+                id
+            }
+        }
+
+    and
+
+    .. code-block:: python
+
+        {"first": 42}
+
+    Args:
+        query (gql.DocumentNode): input query AST
+
+    Returns:
+        Tuple[gql.DocumentNode, Dict[str, Any]]: output query AST, extracted default
+            values.
+    """
+
+    visitor = RemoveDefaultValuesVisitor()
+    new_gql_doc = gql.language.visit(query, visitor)
+    return new_gql_doc, visitor.removed_values
 
 
 def extract_root_queries(

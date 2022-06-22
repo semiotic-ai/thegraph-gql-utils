@@ -84,8 +84,7 @@ publish:
     # Upload to gitlab packages
     - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=${CI_REGISTRY_USER} python -m twine upload --repository-url https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/packages/pypi dist/thegraph_gql_utils-*-py3-none-any.whl
     # Upload to PyPI
-    - cat $PYPIRC > /tmp/.pypirc
-    - python -m twine upload dist/thegraph_gql_utils-*-py3-none-any.whl --config-file /tmp/.pypirc
+    - python -m twine upload --non-interactive --config-file $PYPIRC dist/thegraph_gql_utils-*-py3-none-any.whl
   only:
     - tags@semiotic-ai/the-graph/thegraph-gql-utils
   variables:
